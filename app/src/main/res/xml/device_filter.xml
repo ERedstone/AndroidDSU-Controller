@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Generic USB controller filter -->
+    <usb-device vendor-id="0" product-id="0" />
+    <!-- Add specific controller vendor/product IDs if known -->
+    <usb-device vendor-id="1118" /> <!-- Microsoft (Xbox) -->
+    <usb-device vendor-id="1356" /> <!-- Sony (PlayStation) -->
+    <usb-device vendor-id="1406" /> <!-- Nintendo -->
+</resources>
