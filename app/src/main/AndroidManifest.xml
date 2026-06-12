@@ -5,8 +5,10 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USB_PERMISSION" />
+
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -18,16 +20,30 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AndroidDSU"
         tools:targetApi="31">
+
         <activity
             android:name="com.plawyue.AndroidDSU.MainActivity"
             android:exported="true"
-            android:screenOrientation="portrait">
+            android:screenOrientation="sensorPortrait"
+            android:configChanges="orientation|screenSize|screenLayout">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- USB Device Receiver -->
+        <receiver android:name=".UsbReceiver">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
+                <action android:name="com.plawyue.AndroidDSU.USB_PERMISSION" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/device_filter" />
+        </receiver>
+
     </application>
 
 </manifest>
