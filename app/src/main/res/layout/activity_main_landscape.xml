@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/Serveripaddress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/spical"
+                    android:textSize="16sp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentStart="true" />
+
+                <ImageView
+                    android:id="@+id/ConnectState_image"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/baseline_cloud_off_24"
+                    android:layout_toEndOf="@id/Serveripaddress"
+                    android:layout_marginStart="10dp"
+                    android:layout_centerVertical="true" />
+
+            </RelativeLayout>
+
+        </androidx.appcompat.widget.Toolbar>
+
+        <!-- Main horizontal layout for landscape -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:padding="5dp">
+
+            <!-- Left side: D-Pad and action buttons -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <!-- D-Pad Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="5dp">
+
+                    <!-- D-Pad Up -->
+                    <Button
+                        android:id="@+id/button_dUp"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="↑"
+                        android:textColor="@color/background"
+                        android:textSize="24dp"
+                        android:textStyle="bold" />
+
+                    <!-- D-Pad Middle Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="4dp">
+
+                        <Button
+                            android:id="@+id/button_Dleft"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/unpress"
+                            android:text="←"
+                            android:textColor="@color/background"
+                            android:textSize="24dp"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="2dp" />
+
+                        <Button
+                            android:id="@+id/Button_touchlock"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/pressed"
+                            android:text="@string/lockbutton"
+                            android:textColor="@color/background"
+                            android:textStyle="bold"
+                            android:textSize="12sp"
+                            android:layout_marginStart="2dp"
+                            android:layout_marginEnd="2dp" />
+
+                        <Button
+                            android:id="@+id/button_Dright"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/unpress"
+                            android:text="→"
+                            android:textColor="@color/background"
+                            android:textSize="24dp"
+                            android:textStyle="bold"
+                            android:layout_marginStart="2dp" />
+
+                    </LinearLayout>
+
+                    <!-- D-Pad Down -->
+                    <Button
+                        android:id="@+id/button_Ddown"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="↓"
+                        android:textColor="@color/background"
+                        android:textSize="24dp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+                <!-- PS, L3, R3 buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:padding="4dp">
+
+                    <Button
+                        android:id="@+id/button_home"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="PS"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/buttonL3"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="L3"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginStart="2dp"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/buttonR3"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="R3"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginStart="2dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Center: Joysticks -->
+            <LinearLayout
+                android:id="@+id/joystick_layout"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.2"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:divider="@drawable/line"
+                android:orientation="horizontal"
+                android:padding="5dp"
+                android:showDividers="middle"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <com.shy.rockerview.MyRockerView
+                    android:id="@+id/rocker_view"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:rotation="0.0"
+                    app:areaBackground="@color/spical"
+                    app:rockerBackground="@color/buttonx"
+                    app:rockerCallBackMode="CALL_BACK_MODE_STATE_CHANGE"
+                    app:rockerScale="0.4"
+                    app:rockerSpeedLevel="128" />
+
+                <com.shy.rockerview.MyRockerView
+                    android:id="@+id/rocker_view_2"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:rotation="0.0"
+                    app:areaBackground="@color/buttonx"
+                    app:rockerBackground="@color/spical"
+                    app:rockerCallBackMode="CALL_BACK_MODE_STATE_CHANGE"
+                    app:rockerScale="0.4"
+                    app:rockerSpeedLevel="128" />
+
+            </LinearLayout>
+
+            <!-- Right side: Face buttons and shoulder buttons -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginEnd="8dp"
+                android:padding="4dp">
+
+                <!-- Top row: Triangle, Square, Y, X -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:padding="2dp">
+
+                    <Button
+                        android:id="@+id/Tri"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="Tr"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/button_Y"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="Y"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginStart="2dp"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/button_X"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="X"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginStart="2dp" />
+
+                </LinearLayout>
+
+                <!-- Second row: Square, B -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:padding="2dp"
+                    android:layout_marginTop="4dp">
+
+                    <Button
+                        android:id="@+id/Square"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="Sq"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/button_B"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="B"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginStart="2dp"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/button_A"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="A"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginStart="2dp" />
+
+                </LinearLayout>
+
+                <!-- Shoulder buttons and controls -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="4dp"
+                    android:layout_marginTop="8dp">
+
+                    <Button
+                        android:id="@+id/buttonOption"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="Op"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:textSize="11sp"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/buttonShare"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="Sh"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:textSize="11sp"
+                        android:layout_marginStart="2dp"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/button_PLUS"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="+"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginStart="2dp" />
+
+                </LinearLayout>
+
+                <!-- Bottom buttons: L1, L2, R2, R1, Deduce -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="4dp">
+
+                    <Button
+                        android:id="@+id/button_L2"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="L2"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:textSize="11sp"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/button_R2"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="R2"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:textSize="11sp"
+                        android:layout_marginStart="2dp"
+                        android:layout_marginEnd="2dp" />
+
+                    <Button
+                        android:id="@+id/button_DEDUCE"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/unpress"
+                        android:text="-"
+                        android:textColor="@color/background"
+                        android:textStyle="bold"
+                        android:layout_marginStart="2dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/LOCK"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/pressed"
+        android:padding="15dp"
+        android:text="@string/UnLockTips"
+        android:textColor="@color/background"
+        android:textSize="18dp"
+        android:textStyle="bold"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="40dp"
+        tools:visibility="invisible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
