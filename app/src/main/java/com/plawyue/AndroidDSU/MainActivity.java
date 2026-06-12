@@ -25,6 +25,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -41,6 +43,7 @@ import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
+import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -75,6 +78,8 @@ import com.shy.rockerview.MyRockerView;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 
@@ -102,6 +107,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private  DsuComManage mDsuComManage ;       //DSU协议管理器
 
+    // ==================== ADDED FOR EXTERNAL CONTROLLER SUPPORT ====================
+    private static final String TAG = "ExternalController";
+    private boolean externalControllerConnected = false;
+    private String connectedControllerName = null;
+    private TextView controllerStatusText;
+    private BroadcastReceiver controllerReceiver;
+    private UsbManager usbManager;
+    
+    // Button mapping for external controller (maps gamepad buttons to DSU buttons)
+    private Map<Integer, Integer> controllerButtonMap = new HashMap<>();
+    
+    // Joystick deadzone (0.0 to 1.0)
+    private static final float JOYSTICK_DEADZONE = 0.15f;
+    // ==================== END OF ADDED CODE ====================
 
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -116,11 +135,301 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         WIFIDisplay();
         SensorInit();
         UIRefresh();
+        
+        // ==================== ADDED: Initialize external controller support ====================
+        initExternalControllerSupport();
+        // ==================== END OF ADDED CODE ====================
+        
         //通信管理器创建
         mDsuComManage = new DsuComManage();
         mDsuComManage.StartServer();
 
     }
+    
+    // ==================== ADDED: External Controller Methods ====================
+    
+    private void initExternalControllerSupport() {
+        // Initialize USB manager for USB-C telescopic controllers
+        usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        
+        // Setup controller status text view
+        controllerStatusText = new TextView(this);
+        controllerStatusText.setId(View.generateViewId());
+        controllerStatusText.setTextColor(Color.parseColor("#00FF00"));
+        controllerStatusText.setTextSize(12);
+        
+        // Add to toolbar or status area
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            toolbar.addView(controllerStatusText, new Toolbar.LayoutParams(
+                Toolbar.LayoutParams.WRAP_CONTENT,
+                Toolbar.LayoutParams.WRAP_CONTENT
+            ));
+        }
+        
+        // Broadcast receiver for controller connection/disconnection
+        controllerReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (Intent.ACTION_INPUT_DEVICE_CHANGED.equals(intent.getAction())) {
+                    checkConnectedControllers();
+                }
+            }
+        };
+        
+        // Register receiver
+        IntentFilter filter = new IntentFilter(Intent.ACTION_INPUT_DEVICE_CHANGED);
+        registerReceiver(controllerReceiver, filter);
+        
+        // Initial check for connected controllers
+        checkConnectedControllers();
+        
+        // Initialize button mappings (maps standard Android gamepad buttons to DSU)
+        initControllerButtonMappings();
+    }
+    
+    private void initControllerButtonMappings() {
+        // Standard button mappings
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_A, 0);      // Maps to A button
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_B, 1);      // Maps to B button
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_X, 2);      // Maps to X button
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_Y, 3);      // Maps to Y button
+        
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_L1, 4);     // Maps to L1
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_R1, 5);     // Maps to R1
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_L2, 6);     // Maps to L2 (analog)
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_R2, 7);     // Maps to R2 (analog)
+        
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_THUMBL, 8); // Left stick click (L3)
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_THUMBR, 9); // Right stick click (R3)
+        
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_START, 10);  // Start/Options
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_SELECT, 11); // Select/Share
+        
+        controllerButtonMap.put(KeyEvent.KEYCODE_BUTTON_MODE, 12);   // Home/PS button
+        
+        controllerButtonMap.put(KeyEvent.KEYCODE_DPAD_UP, 13);       // D-pad Up
+        controllerButtonMap.put(KeyEvent.KEYCODE_DPAD_DOWN, 14);     // D-pad Down
+        controllerButtonMap.put(KeyEvent.KEYCODE_DPAD_LEFT, 15);     // D-pad Left
+        controllerButtonMap.put(KeyEvent.KEYCODE_DPAD_RIGHT, 16);    // D-pad Right
+    }
+    
+    private void checkConnectedControllers() {
+        int[] deviceIds = InputDevice.getDeviceIds();
+        boolean foundController = false;
+        
+        for (int id : deviceIds) {
+            InputDevice device = InputDevice.getDevice(id);
+            if (device != null && (device.getSources() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) {
+                foundController = true;
+                connectedControllerName = device.getName();
+                Log.d(TAG, "Controller connected: " + connectedControllerName);
+                
+                // Show toast on connection
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, 
+                        getString(R.string.controller_connected, connectedControllerName), 
+                        Toast.LENGTH_SHORT).show();
+                    updateControllerStatusUI(true);
+                });
+                break;
+            }
+        }
+        
+        if (!foundController && externalControllerConnected) {
+            runOnUiThread(() -> {
+                Toast.makeText(MainActivity.this, 
+                    getString(R.string.controller_disconnected), 
+                    Toast.LENGTH_SHORT).show();
+                updateControllerStatusUI(false);
+            });
+        }
+        
+        externalControllerConnected = foundController;
+        if (!foundController) {
+            connectedControllerName = null;
+        }
+    }
+    
+    private void updateControllerStatusUI(boolean connected) {
+        if (controllerStatusText != null) {
+            if (connected && connectedControllerName != null) {
+                controllerStatusText.setText("🎮 " + connectedControllerName);
+                controllerStatusText.setTextColor(Color.parseColor("#00FF00"));
+            } else {
+                controllerStatusText.setText(getString(R.string.no_controller));
+                controllerStatusText.setTextColor(Color.parseColor("#888888"));
+            }
+        }
+    }
+    
+    private void handleControllerJoystick(MotionEvent event) {
+        if (locked) return; // Don't process if locked
+        
+        // Get left stick values (range: -1.0 to 1.0)
+        float leftX = event.getAxisValue(MotionEvent.AXIS_X);
+        float leftY = event.getAxisValue(MotionEvent.AXIS_Y);
+        
+        // Get right stick values
+        float rightX = event.getAxisValue(MotionEvent.AXIS_Z);
+        float rightY = event.getAxisValue(MotionEvent.AXIS_RZ);
+        
+        // Apply deadzone
+        leftX = applyDeadzone(leftX);
+        leftY = applyDeadzone(leftY);
+        rightX = applyDeadzone(rightX);
+        rightY = applyDeadzone(rightY);
+        
+        // Convert from -1..1 range to 0..255 range (DSU expects 0-255)
+        int leftStickX = (int) ((leftX + 1) * 127.5f);
+        int leftStickY = (int) ((leftY + 1) * 127.5f);
+        int rightStickX = (int) ((rightX + 1) * 127.5f);
+        int rightStickY = (int) ((rightY + 1) * 127.5f);
+        
+        // Clamp values
+        leftStickX = Math.min(255, Math.max(0, leftStickX));
+        leftStickY = Math.min(255, Math.max(0, leftStickY));
+        rightStickX = Math.min(255, Math.max(0, rightStickX));
+        rightStickY = Math.min(255, Math.max(0, rightStickY));
+        
+        // Update DSU data
+        gs_DsuCtrlUIData.left_stick_x = leftStickX;
+        gs_DsuCtrlUIData.left_stick_y = leftStickY;
+        gs_DsuCtrlUIData.right_stick_x = rightStickX;
+        gs_DsuCtrlUIData.right_stick_y = rightStickY;
+        
+        // Handle analog triggers (L2/R2)
+        float l2Value = event.getAxisValue(MotionEvent.AXIS_LTRIGGER);
+        float r2Value = event.getAxisValue(MotionEvent.AXIS_RTRIGGER);
+        
+        if (l2Value > 0.1f) {
+            int l2Int = (int) (l2Value * 255);
+            gs_DsuCtrlUIData.L2 = Math.min(255, l2Int);
+        } else {
+            gs_DsuCtrlUIData.L2 = 0;
+        }
+        
+        if (r2Value > 0.1f) {
+            int r2Int = (int) (r2Value * 255);
+            gs_DsuCtrlUIData.R2 = Math.min(255, r2Int);
+        } else {
+            gs_DsuCtrlUIData.R2 = 0;
+        }
+    }
+    
+    private float applyDeadzone(float value) {
+        if (Math.abs(value) < JOYSTICK_DEADZONE) {
+            return 0f;
+        }
+        // Rescale remaining range
+        float sign = value > 0 ? 1f : -1f;
+        return sign * ((Math.abs(value) - JOYSTICK_DEADZONE) / (1f - JOYSTICK_DEADZONE));
+    }
+    
+    private void handleControllerButtonPress(int keyCode, boolean pressed) {
+        if (locked && keyCode != KeyEvent.KEYCODE_BACK) return;
+        
+        // Map the key code to DSU button action
+        Integer mappedAction = controllerButtonMap.get(keyCode);
+        
+        if (mappedAction != null) {
+            switch (mappedAction) {
+                case 0: // A button
+                    gs_DsuCtrlUIData.A = pressed ? 255 : 0;
+                    updateButtonVisual(button_A, pressed);
+                    break;
+                case 1: // B button
+                    gs_DsuCtrlUIData.B = pressed ? 255 : 0;
+                    updateButtonVisual(button_B, pressed);
+                    break;
+                case 2: // X button
+                    gs_DsuCtrlUIData.X = pressed ? 255 : 0;
+                    updateButtonVisual(button_X, pressed);
+                    break;
+                case 3: // Y button
+                    gs_DsuCtrlUIData.Y = pressed ? 255 : 0;
+                    updateButtonVisual(button_Y, pressed);
+                    break;
+                case 4: // L1
+                    gs_DsuCtrlUIData.L1 = pressed ? 255 : 0;
+                    break;
+                case 5: // R1
+                    gs_DsuCtrlUIData.R1 = pressed ? 255 : 0;
+                    updateButtonVisual(button_PLUS, pressed);
+                    break;
+                case 6: // L2 (analog, but we handle digital press)
+                    if (pressed) gs_DsuCtrlUIData.L2 = 255;
+                    else if (gs_DsuCtrlUIData.L2 > 0 && event.getAxisValue(MotionEvent.AXIS_LTRIGGER) == 0) gs_DsuCtrlUIData.L2 = 0;
+                    updateButtonVisual(L2, pressed);
+                    break;
+                case 7: // R2 (analog)
+                    if (pressed) gs_DsuCtrlUIData.R2 = 255;
+                    else if (gs_DsuCtrlUIData.R2 > 0 && event.getAxisValue(MotionEvent.AXIS_RTRIGGER) == 0) gs_DsuCtrlUIData.R2 = 0;
+                    updateButtonVisual(R2, pressed);
+                    break;
+                case 8: // L3
+                    gs_DsuCtrlUIData.L3 = pressed ? 1 : 0;
+                    updateButtonVisual(L3, pressed);
+                    break;
+                case 9: // R3
+                    gs_DsuCtrlUIData.R3 = pressed ? 1 : 0;
+                    updateButtonVisual(R3, pressed);
+                    break;
+                case 10: // Start/Options
+                    gs_DsuCtrlUIData.Option = pressed ? 1 : 0;
+                    updateButtonVisual(OPkey, pressed);
+                    break;
+                case 11: // Select/Share
+                    gs_DsuCtrlUIData.Share = pressed ? 1 : 0;
+                    updateButtonVisual(SHARE, pressed);
+                    break;
+                case 12: // Home/PS
+                    gs_DsuCtrlUIData.PS = pressed ? 1 : 0;
+                    updateButtonVisual(BUTTON_home, pressed);
+                    break;
+                case 13: // D-pad Up
+                    gs_DsuCtrlUIData.Dpad_UP = pressed ? 255 : 0;
+                    updateButtonVisual(button_DUP, pressed);
+                    break;
+                case 14: // D-pad Down
+                    gs_DsuCtrlUIData.Dpad_Down = pressed ? 255 : 0;
+                    updateButtonVisual(button_DDOWN, pressed);
+                    break;
+                case 15: // D-pad Left
+                    gs_DsuCtrlUIData.Dpad_Left = pressed ? 255 : 0;
+                    updateButtonVisual(button_DLEFT, pressed);
+                    break;
+                case 16: // D-pad Right
+                    gs_DsuCtrlUIData.Dpad_Right = pressed ? 255 : 0;
+                    updateButtonVisual(button_DRight, pressed);
+                    break;
+            }
+        }
+        
+        // Handle volume buttons as controller buttons (existing functionality)
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            gs_DsuCtrlUIData.A = pressed ? 255 : 0;
+            updateButtonVisual(button_A, pressed);
+        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            gs_DsuCtrlUIData.B = pressed ? 255 : 0;
+            updateButtonVisual(button_B, pressed);
+        }
+    }
+    
+    private void updateButtonVisual(Button button, boolean pressed) {
+        if (button != null) {
+            if (pressed) {
+                button.setBackground(getDrawable(R.drawable.pressed));
+                button.animate().scaleX(0.9f).scaleY(0.9f).setDuration(50).start();
+            } else {
+                button.setBackground(getDrawable(R.drawable.unpress));
+                button.animate().scaleX(1f).scaleY(1f).setDuration(50).start();
+            }
+        }
+    }
+    
+    // ==================== END OF ADDED EXTERNAL CONTROLLER CODE ====================
+
     /******************************** PART 0  初始化  ************************************/
     public void UIInit()
     {
@@ -199,6 +508,59 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             gs_DsuCtrlUIData.TouchStruce = Arrays.copyOf(data,12);
         });
     }
+    
+    // ==================== OVERRIDE METHODS FOR CONTROLLER INPUT ====================
+    
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        // Check if this is a gamepad/joystick event
+        if ((event.getSource() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD ||
+            (event.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) {
+            
+            if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                handleControllerJoystick(event);
+                return true;
+            }
+        }
+        return super.onGenericMotionEvent(event);
+    }
+    
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        int keyCode = event.getKeyCode();
+        
+        // Check if this is a gamepad button
+        if ((event.getSource() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) {
+            boolean isActionDown = event.getAction() == KeyEvent.ACTION_DOWN;
+            
+            // Provide haptic feedback for button presses
+            if (isActionDown && !locked) {
+                getWindow().getDecorView().performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            } else if (!isActionDown && !locked) {
+                getWindow().getDecorView().performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE);
+            }
+            
+            handleControllerButtonPress(keyCode, isActionDown);
+            return true;
+        }
+        
+        // Handle back button for unlocking
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (locked) {
+                // Simulate unlock when back is pressed while locked
+                View lockView = findViewById(R.id.LOCK);
+                if (lockView != null) {
+                    lockView.performLongClick();
+                }
+                return true;
+            }
+        }
+        
+        return super.dispatchKeyEvent(event);
+    }
+    
+    // ==================== END OF OVERRIDE METHODS ====================
+    
     public void ButtonInit()
     {
         TextView Locktips=findViewById(R.id.LOCK);
@@ -261,6 +623,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         BUTTON_home.setOnClickListener(this);
         loadbutton();
     }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Unregister controller receiver to prevent memory leaks
+        if (controllerReceiver != null) {
+            try {
+                unregisterReceiver(controllerReceiver);
+            } catch (IllegalArgumentException e) {
+                // Receiver wasn't registered
+            }
+        }
+    }
+    
     public void GlobalVarInit()
     {
         gs_DsuCtrlUIData = new DsuCtrlType();
@@ -305,13 +681,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     }
-
-
-
-
-
-
-
 
     public void SensorInit()
     {
