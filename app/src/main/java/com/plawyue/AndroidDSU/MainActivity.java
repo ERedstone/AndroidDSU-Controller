@@ -78,6 +78,196 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.Timer;
 
+import android.os.Bundle;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private ExternalControllerManager controllerManager;
+    private TextView controllerStatus;
+    private TextView buttonDisplay;
+    private TextView joystickDisplay;
+    private View mainLayout;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        // Force landscape orientation
+        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        
+        // Keep screen on while using controller
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        
+        setContentView(R.layout.activity_main);
+        
+        initializeViews();
+        initializeController();
+    }
+    
+    private void initializeViews() {
+        mainLayout = findViewById(R.id.mainLayout);
+        controllerStatus = findViewById(R.id.controllerStatus);
+        buttonDisplay = findViewById(R.id.buttonDisplay);
+        joystickDisplay = findViewById(R.id.joystickDisplay);
+        
+        // Hide system UI for immersive gaming experience
+        hideSystemUI();
+    }
+    
+    private void hideSystemUI() {
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+        );
+        
+        decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
+            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                hideSystemUI();
+            }
+        });
+    }
+    
+    private void initializeController() {
+        controllerManager = new ExternalControllerManager(this);
+        controllerManager.setControllerListener(new ExternalControllerManager.ControllerListener() {
+            @Override
+            public void onControllerConnected(int controllerId) {
+                runOnUiThread(() -> {
+                    String message = "Controller connected: " + controllerId;
+                    controllerStatus.setText(message);
+                    controllerStatus.setVisibility(View.VISIBLE);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                });
+            }
+            
+            @Override
+            public void onControllerDisconnected(int controllerId) {
+                runOnUiThread(() -> {
+                    String message = "Controller disconnected: " + controllerId;
+                    controllerStatus.setText(message);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                    
+                    // Hide status after 3 seconds
+                    controllerStatus.postDelayed(() -> {
+                        controllerStatus.setVisibility(View.GONE);
+                    }, 3000);
+                });
+            }
+            
+            @Override
+            public void onButtonPressed(int controllerId, int button) {
+                runOnUiThread(() -> {
+                    String buttonName = KeyEvent.keyCodeToString(button);
+                    buttonDisplay.setText(String.format("Button Pressed: %s", buttonName));
+                });
+            }
+            
+            @Override
+            public void onButtonReleased(int controllerId, int button) {
+                runOnUiThread(() -> {
+                    buttonDisplay.setText("Button Released");
+                });
+            }
+            
+            @Override
+            public void onJoystickMoved(int controllerId, int axis, float value) {
+                runOnUiThread(() -> {
+                    String axisName = getAxisName(axis);
+                    joystickDisplay.setText(String.format("%s: %.2f", axisName, value));
+                });
+            }
+            
+            @Override
+            public void onDpadPressed(int controllerId, int direction) {
+                runOnUiThread(() -> {
+                    buttonDisplay.setText(String.format("D-Pad: %s", getDpadDirection(direction)));
+                });
+            }
+            
+            @Override
+            public void onDpadReleased(int controllerId, int direction) {
+                runOnUiThread(() -> {
+                    buttonDisplay.setText("D-Pad Released");
+                });
+            }
+        });
+    }
+    
+    private String getAxisName(int axis) {
+        switch (axis) {
+            case 0: return "Left Stick X";
+            case 1: return "Left Stick Y";
+            case 2: return "Right Stick X";
+            case 3: return "Right Stick Y";
+            case 4: return "L2 Trigger";
+            case 5: return "R2 Trigger";
+            default: return "Axis " + axis;
+        }
+    }
+    
+    private String getDpadDirection(int direction) {
+        switch (direction) {
+            case KeyEvent.KEYCODE_DPAD_UP: return "Up";
+            case KeyEvent.KEYCODE_DPAD_DOWN: return "Down";
+            case KeyEvent.KEYCODE_DPAD_LEFT: return "Left";
+            case KeyEvent.KEYCODE_DPAD_RIGHT: return "Right";
+            default: return "Unknown";
+        }
+    }
+    
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (controllerManager.handleKeyEvent(event)) {
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+    
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (controllerManager.handleKeyEvent(event)) {
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+    
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (controllerManager.handleGenericMotionEvent(event)) {
+            return true;
+        }
+        return super.onGenericMotionEvent(event);
+    }
+    
+    @Override
+    protected void onDestroy() {
+        if (controllerManager != null) {
+            controllerManager.cleanup();
+        }
+        super.onDestroy();
+    }
+    
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            hideSystemUI();
+        }
+    }
+}
+
+
+
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener, View.OnLongClickListener {
     private SensorManager sensorManager;
     private Sensor sensor;
