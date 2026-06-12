@@ -21,7 +21,8 @@
         <activity
             android:name="com.plawyue.AndroidDSU.MainActivity"
             android:exported="true"
-            android:screenOrientation="portrait">
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
