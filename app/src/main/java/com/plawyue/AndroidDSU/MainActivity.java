@@ -304,10 +304,109 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
 
 
+        }
+    
+        // In your Activity or custom View
+        private static final int CONTROLLER_INPUT_SOURCE = InputDevice.SOURCE_GAMEPAD 
+            | InputDevice.SOURCE_JOYSTICK;
+        
+        @Override
+        public boolean onGenericMotionEvent(MotionEvent event) {
+            if ((event.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) {
+                handleJoystickInput(event);
+                return true;
+            }
+            return super.onGenericMotionEvent(event);
+        }
+        
+        @Override
+        public boolean onKeyDown(int keyCode, KeyEvent event) {
+            if (event.getSource() == InputDevice.SOURCE_GAMEPAD) {
+                handleGamepadButton(keyCode, event);
+                return true;
+            }
+            return super.onKeyDown(keyCode, event);
+        }
+        private void handleGamepadButton(int keyCode, KeyEvent event) {
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_BUTTON_A:
+                    // Jump/Action button
+                    break;
+                case KeyEvent.KEYCODE_BUTTON_B:
+                    // Cancel/Run
+                    break;
+                case KeyEvent.KEYCODE_BUTTON_X:
+                case KeyEvent.KEYCODE_BUTTON_Y:
+                case KeyEvent.KEYCODE_BUTTON_L1:
+                case KeyEvent.KEYCODE_BUTTON_R1:
+                case KeyEvent.KEYCODE_BUTTON_THUMBL:
+                case KeyEvent.KEYCODE_BUTTON_THUMBR:
+                case KeyEvent.KEYCODE_DPAD_UP:
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    // Handle other buttons
+                    break;
+            }
+        }
+        private BroadcastReceiver controllerReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Intent.ACTION_INPUT_DEVICE_CHANGED.equals(intent.getAction())) {
+                checkConnectedControllers();
+            }
+        }
+    };
+    
+    private void checkConnectedControllers() {
+        int[] deviceIds = InputDevice.getDeviceIds();
+        boolean hasController = false;
+        
+        for (int id : deviceIds) {
+            InputDevice device = InputDevice.getDevice(id);
+            if ((device.getSources() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
+                || (device.getSources() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) {
+                hasController = true;
+                Log.d("Controller", "Connected: " + device.getName());
+                // Show notification or enable controller mode
+            }
+        }
+        
+        // Update UI based on controller presence
+        runOnUiThread(() -> {
+            // Show/hide controller UI indicators
+        });
     }
-
-
-
+    
+    // Register in onResume
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_INPUT_DEVICE_CHANGED);
+        registerReceiver(controllerReceiver, filter);
+        checkConnectedControllers();
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(controllerReceiver);
+    }
+    
+        
+        private void handleJoystickInput(MotionEvent event) {
+            // Get joystick axes values (range: -1.0 to 1.0)
+            float xAxis = event.getAxisValue(MotionEvent.AXIS_X);
+            float yAxis = event.getAxisValue(MotionEvent.AXIS_Y);
+            float rxAxis = event.getAxisValue(MotionEvent.AXIS_RX);
+            float ryAxis = event.getAxisValue(MotionEvent.AXIS_RY);
+            float triggerLeft = event.getAxisValue(MotionEvent.AXIS_LTRIGGER);
+            float triggerRight = event.getAxisValue(MotionEvent.AXIS_RTRIGGER);
+            
+            // Map to your game controls
+            // Example: map left stick to character movement
+        }
+        
 
 
 
