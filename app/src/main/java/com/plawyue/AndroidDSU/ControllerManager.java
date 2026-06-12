@@ -1,4 +1,4 @@
-package com.plawyue.dsucontroller;
+package com.plawyue.AndroidDSU;
 
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
