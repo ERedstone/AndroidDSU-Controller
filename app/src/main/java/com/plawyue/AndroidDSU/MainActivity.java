@@ -302,7 +302,66 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             DrawableCompat.setTint(drawable, getResources().getColor(R.color.spical));
             mtoorbar.setOverflowIcon(drawable);
         }
- 
+
+
+    }
+
+
+
+
+
+
+
+
+    public void SensorInit()
+    {
+
+        registerReceiver(mBatInfoReveiver, new IntentFilter(
+                Intent.ACTION_BATTERY_CHANGED));
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        SensorEventListener sensorListener = new SensorEventListener() {
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+            }
+            public void onSensorChanged(SensorEvent event) {
+                Boolean conver=true;
+                Boolean noconver=false;
+                float accX = -Accsensitvity*event.values[2] * METER_PER_SECOND_SQUARED_TO_G / 100;
+                float accY =  -Accsensitvity*event.values[0] * METER_PER_SECOND_SQUARED_TO_G / 100;
+                float accZ =Accsensitvity*event.values[1] * METER_PER_SECOND_SQUARED_TO_G / 100;
+                gs_DsuCtrlUIData.accelX= accY;
+                gs_DsuCtrlUIData.accelY=accX;
+                gs_DsuCtrlUIData.accelZ=accZ;
+
+
+            }
+        };
+        SensorEventListener gyrolinster=new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent sensorEvent) {
+
+                gs_DsuCtrlUIData.gyroR= (float) (radToDeg(sensorEvent.values[1]) * Gyrosensitvity);
+                gs_DsuCtrlUIData.gyroY= (float) (-radToDeg(sensorEvent.values[2]) *Gyrosensitvity);
+                gs_DsuCtrlUIData.gyroP= (float) (radToDeg(sensorEvent.values[0]) * Gyrosensitvity);
+            }
+            double radToDeg(double radians) {
+                return radians * 180 / PI;
+            }
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int i) {
+
+            }
+        };
+        sensorManager.registerListener(sensorListener,
+                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(gyrolinster,
+                sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE),
+                SensorManager.SENSOR_DELAY_GAME);
+
+
+    }
+
 
     /******************************** PART 1  电池信息传递  ************************************/
     private void onBatteryInfoReceiver(int intLevel, int intScale) {
