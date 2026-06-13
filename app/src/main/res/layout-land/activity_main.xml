@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@color/background">
+
+    <!-- Left side: Large touchpad area -->
+    <com.plawyue.AndroidDSU.VirtualTouchpadView
+        android:id="@+id/touchpad_landscape"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.6" />
+
+    <!-- Right side: Minimal controls (optional) -->
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.4"
+        android:padding="8dp">
+        
+        <include layout="@layout/activity_main" />
+    </FrameLayout>
+
+</LinearLayout>
