@@ -81,6 +81,9 @@ import java.util.Timer;
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener, View.OnLongClickListener {
     private SensorManager sensorManager;
     private Sensor sensor;
+    private ControllerInputManager controllerInputManager;
+    private ControllerDetectionListener controllerDetectionListener;
+    private boolean useExternalController = false;
 
     static double PI = 3.1415926535897932;
     Button L3,R3,OPkey,SHARE,Colorx;
@@ -115,6 +118,29 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         JoystickInit();
         WIFIDisplay();
         SensorInit();
+                    // Initialize external controller support
+            controllerInputManager = new ControllerInputManager(gs_DsuCtrlUIData);
+            controllerDetectionListener = new ControllerDetectionListener(this, 
+                new ControllerDetectionListener.OnControllerStateChangedListener() {
+                    @Override
+                    public void onControllerConnected(InputDevice device) {
+                        useExternalController = true;
+                        controllerInputManager.setConnected(true);
+                        Toast.makeText(MainActivity.this, 
+                            "External Controller Connected: " + device.getName(), 
+                            Toast.LENGTH_SHORT).show();
+                    }
+            
+                    @Override
+                    public void onControllerDisconnected() {
+                        useExternalController = false;
+                        controllerInputManager.setConnected(false);
+                        Toast.makeText(MainActivity.this, 
+                            "External Controller Disconnected", 
+                            Toast.LENGTH_SHORT).show();
+                    }
+                });
+            controllerDetectionListener.startListening();
         UIRefresh();
         //通信管理器创建
         mDsuComManage = new DsuComManage();
@@ -657,36 +683,64 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
     @Override
-    public boolean onKeyDown (int keyCode, KeyEvent event) {
-        getWindow().getDecorView().performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-        switch (keyCode) {
+public boolean onGenericMotionEvent(MotionEvent event) {
+    if (useExternalController && controllerInputManager.onGenericMotionEvent(event)) {
+        return true;
+    }
+    return super.onGenericMotionEvent(event);
+}
+
+@Override
+public boolean onKeyDown (int keyCode, KeyEvent event) {
+    // First try to handle with external controller
+    if (useExternalController && controllerInputManager.onKeyEvent(event)) {
+        return true;
+    }
+    
+    // Original key handling
+    getWindow().getDecorView().performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+    switch (keyCode) {
 // 音量减小
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-                button_A.setBackground(getDrawable(R.drawable.pressed));gs_DsuCtrlUIData.A=255;
-                return true;
+        case KeyEvent.KEYCODE_VOLUME_DOWN:
+            button_A.setBackground(getDrawable(R.drawable.pressed));gs_DsuCtrlUIData.A=255;
+            return true;
 // 音量增大
-            case KeyEvent.KEYCODE_VOLUME_UP:
-                button_B.setBackground(getDrawable(R.drawable.pressed)); gs_DsuCtrlUIData.B=255;
-                return true;
-            case KeyEvent.KEYCODE_BACK:
-                if(locked){
-                    return true;}
-        }
-        return super.onKeyDown (keyCode, event);
+        case KeyEvent.KEYCODE_VOLUME_UP:
+            button_B.setBackground(getDrawable(R.drawable.pressed)); gs_DsuCtrlUIData.B=255;
+            return true;
+        case KeyEvent.KEYCODE_BACK:
+            if(locked){
+                return true;}
     }
+    return super.onKeyDown (keyCode, event);
+}
+
+@Override
+public boolean onKeyUp(int keyCode, KeyEvent event){
+    // First try to handle with external controller
+    if (useExternalController && controllerInputManager.onKeyEvent(event)) {
+        return true;
+    }
+    
+    // Original key handling
+    getWindow().getDecorView().performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE);
+    switch (keyCode) {
+        case KeyEvent.KEYCODE_VOLUME_DOWN:
+            button_A.setBackground(getDrawable(R.drawable.unpress));gs_DsuCtrlUIData.A=0;
+            return true;
+        case KeyEvent.KEYCODE_VOLUME_UP:
+            button_B.setBackground(getDrawable(R.drawable.unpress)); gs_DsuCtrlUIData.B=0;
+            return true;
+    }
+    return super.onKeyUp (keyCode, event);
+}
     @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event){
-        getWindow().getDecorView().performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE);
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-                button_A.setBackground(getDrawable(R.drawable.unpress));gs_DsuCtrlUIData.A=0;
-                return true;
-            case KeyEvent.KEYCODE_VOLUME_UP:
-                button_B.setBackground(getDrawable(R.drawable.unpress)); gs_DsuCtrlUIData.B=0;
-                return true;
-        }
-        return super.onKeyUp (keyCode, event);
+protected void onDestroy() {
+    if (controllerDetectionListener != null) {
+        controllerDetectionListener.stopListening();
     }
+    super.onDestroy();
+}
     /******************************** PART 3  界面特效相关代码  ************************************/
     boolean edit_flag=true;     //编辑模式标识
     public static Bitmap handleImageEffect(Bitmap bitmap,float lum) {
