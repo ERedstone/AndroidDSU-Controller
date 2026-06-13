@@ -1,6 +1,5 @@
 package com.plawyue.AndroidDSU;
 
-import android.content.Context;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
